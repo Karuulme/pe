@@ -90,9 +90,10 @@ int main()
     HANDLE fileHandle;
     HANDLE maphandle;
     LPVOID lpBase;
+
     LPCWSTR fileAddress = L"C:/Users/Karuu/Desktop/ConsoleApplication.exe";
 
-    fileHandle = CreateFile((LPCWSTR)fileAddress, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    fileHandle = CreateFile(fileAddress, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (fileHandle == INVALID_HANDLE_VALUE) {
         cout << "Hata :" << GetLastError() << endl;
         return 1;
@@ -111,24 +112,6 @@ int main()
     dosHeader = (PIMAGE_DOS_HEADER)lpBase;
 
     cout << dosHeader->e_lfanew;
-    HANDLE lpBase;
-    HANDLE  mpBase;
-
-    LPCWSTR fileAddress = L"C:/Users/Karuu/Desktop/pe-master/Strings/ConsoleApplication.exe";
-    fileHandle = CreateFile(fileAddress, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (fileHandle == INVALID_HANDLE_VALUE)return 1;
-    lpBase = CreateFileMapping(&fileHandle, NULL, PAGE_READONLY, 0, 0, 0);
-    if (lpBase)return 2;
-    mpBase = MapViewOfFile(&lpBase, FILE_MAP_READ, 0, 0, 0);
-    if (mpBase) return 3;
-    cout << "Hata Yok!" << endl;
-    dosHeader = (PIMAGE_DOS_HEADER)mpBase;
-
-    cout << dosHeader->e_crlc;
-    CloseHandle(fileHandle);
-    CloseHandle(lpBase);
-    CloseHandle(mpBase);
-    return 0;
     CloseHandle(fileHandle);
     return 0;
 }
