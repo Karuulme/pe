@@ -1,7 +1,6 @@
 ﻿#include <Windows.h>
 #include <stdio.h>
 #include <iostream>
-//#include <errhandlingapi.h>
 using namespace std;
 
 int main()
@@ -109,8 +108,8 @@ int main()
     //            DWORD NumberOfSymbols;
     //            WORD  SizeOfOptionalHeader;
     //            WORD  Characteristics;
-    DWORD FileSize, PeHeaderAddress, Signature;
-    HANDLE fileHandle;
+    DWORD FileSize, PeHeaderAddress, Signature,fileHeader;
+    HANDLE fileHandle, optHeader, selectHeader;
     HANDLE maphandle;
     LPVOID lpBase;
 
@@ -130,16 +129,30 @@ int main()
         cout << "Hata :" << GetLastError() << endl;
         return 3;
     }
-    cout << "Hata Yok!" << endl;
+
     dosHeader = (PIMAGE_DOS_HEADER)lpBase;
     if (dosHeader->e_magic == IMAGE_DOS_SIGNATURE) {
-        printf("Dos exe File");
+        cout<<"Dos exe File"<<endl;
+
     }
     ntHeaders = (PIMAGE_NT_HEADERS)((BYTE*)dosHeader + (dosHeader->e_lfanew));
-    cout << ntHeaders->Signature;
+    cout << ntHeaders->Signature<<endl;
     if (ntHeaders->Signature == IMAGE_NT_SIGNATURE) {
-        printf("PE File");
+        cout<<"PE File"<<endl;
     }
+    fileHeader = (PIMAGE_FILE_HEADER)&(ntHeaders->FileHeader);
+    optHeader = (PIMAGE_OPTIONAL_HEADER)&(ntHeaders->OptionalHeader);
+
+    /*
+    cout << "IMAGE DAta HEADER" << endl;
+    cout << "->" << ntHeaders->OptionalHeader.DataDirectory<<endl;
+    ntHeaders->OptionalHeader.DataDirectory->VirtualAddress;
+    */
+    cout <<"NumberOfSections"<< fileHeader->NumberOfSections<<endl;
+    selectHeader = (PIMAGE_SECTION_HEADER)((DWORD)ntHeaders + &optHeader + sizeof(optHeader));
+
+    
+
 
     CloseHandle(fileHandle);
     return 0;
