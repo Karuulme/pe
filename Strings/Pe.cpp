@@ -108,12 +108,15 @@ int main()
     //            DWORD NumberOfSymbols;
     //            WORD  SizeOfOptionalHeader;
     //            WORD  Characteristics;
-    DWORD FileSize, PeHeaderAddress, Signature,fileHeader;
+    DWORD FileSize, PeHeaderAddress, Signature;
     HANDLE fileHandle, optHeader, selectHeader;
     HANDLE maphandle;
     LPVOID lpBase;
+    PIMAGE_SECTION_HEADER pSecHeader;
 
-    LPCWSTR fileAddress = L"C:/Users/Karuu/Desktop/ConsoleApplication.exe";
+   // LPCWSTR fileAddress = L"C:/Users/Karuu/Desktop/pe calisma/Untitled5.exe";
+    LPCWSTR fileAddress = L"C:/Program Files/CCleaner/CCleaner64.exe";
+
     fileHandle = CreateFile(fileAddress, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (fileHandle == INVALID_HANDLE_VALUE) {
         cout << "Hata :" << GetLastError() << endl;
@@ -148,11 +151,18 @@ int main()
     cout << "->" << ntHeaders->OptionalHeader.DataDirectory<<endl;
     ntHeaders->OptionalHeader.DataDirectory->VirtualAddress;
     */
-    cout <<"NumberOfSections"<< fileHeader->NumberOfSections<<endl;
-    selectHeader = (PIMAGE_SECTION_HEADER)((DWORD)ntHeaders + &optHeader + sizeof(optHeader));
+    cout <<"NumberOfSections "<< fileHeader->NumberOfSections<<endl;
+   // selectHeader = (PIMAGE_SECTION_HEADER)((DWORD)ntHeaders + &optHeader + sizeof(optHeader));
 
-    
+    pSecHeader = IMAGE_FIRST_SECTION(ntHeaders);
+    for(int i = 0; i < fileHeader->NumberOfSections; i++, pSecHeader++)
+    {
+        cout << "----------------" << endl;
+        cout << "Name" << pSecHeader->Name<<endl;
+        cout << "SizeOfRawData: " << pSecHeader->SizeOfRawData <<endl;
+        cout << "VirtualAddress: " << pSecHeader->VirtualAddress <<endl;
 
+    }
 
     CloseHandle(fileHandle);
     return 0;
