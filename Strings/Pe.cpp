@@ -112,10 +112,13 @@ int main()
     HANDLE fileHandle, optHeader, selectHeader;
     HANDLE maphandle;
     LPVOID lpBase;
-    PIMAGE_SECTION_HEADER pSecHeader;
+    //  PIMAGE_EXPORT_DIRECTORY importDirectory;
+    IMAGE_IMPORT_DESCRIPTOR* importDescriptor = {};
+    DWORD thunk;
+    PIMAGE_THUNK_DATA thunkData;
 
-   // LPCWSTR fileAddress = L"C:/Users/Karuu/Desktop/pe calisma/Untitled5.exe";
-    LPCWSTR fileAddress = L"C:/Program Files/CCleaner/CCleaner64.exe";
+    // LPCWSTR fileAddress = L"C:/Users/Karuu/Desktop/pe calisma/Untitled5.exe";
+    LPCWSTR fileAddress = L"C:/Program Files (x86)/Dev-Cpp/devcpp.exe";
 
     fileHandle = CreateFile(fileAddress, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (fileHandle == INVALID_HANDLE_VALUE) {
@@ -132,36 +135,57 @@ int main()
         cout << "Hata :" << GetLastError() << endl;
         return 3;
     }
-
     dosHeader = (PIMAGE_DOS_HEADER)lpBase;
     if (dosHeader->e_magic == IMAGE_DOS_SIGNATURE) {
-        cout<<"Dos exe File"<<endl;
-
+        //  cout<<"Dos exe File"<<endl;
     }
     ntHeaders = (PIMAGE_NT_HEADERS)((BYTE*)dosHeader + (dosHeader->e_lfanew));
-    cout << ntHeaders->Signature<<endl;
+    //  cout << ntHeaders->Signature<<endl;
     if (ntHeaders->Signature == IMAGE_NT_SIGNATURE) {
-        cout<<"PE File"<<endl;
+        //  cout<<"PE File"<<endl;
     }
-    fileHeader = (PIMAGE_FILE_HEADER)&(ntHeaders->FileHeader);
-    optHeader = (PIMAGE_OPTIONAL_HEADER)&(ntHeaders->OptionalHeader);
 
-    /*
-    cout << "IMAGE DAta HEADER" << endl;
-    cout << "->" << ntHeaders->OptionalHeader.DataDirectory<<endl;
-    ntHeaders->OptionalHeader.DataDirectory->VirtualAddress;
-    */
-    cout <<"NumberOfSections "<< fileHeader->NumberOfSections<<endl;
-   // selectHeader = (PIMAGE_SECTION_HEADER)((DWORD)ntHeaders + &optHeader + sizeof(optHeader));
+    fileHeader = (PIMAGE_FILE_HEADER) & (ntHeaders->FileHeader);
+    optHeader = (PIMAGE_OPTIONAL_HEADER) & (ntHeaders->OptionalHeader);
 
-    pSecHeader = IMAGE_FIRST_SECTION(ntHeaders);
-    for(int i = 0; i < fileHeader->NumberOfSections; i++, pSecHeader++)
-    {
-        cout << "----------------" << endl;
-        cout << "Name" << pSecHeader->Name<<endl;
-        cout << "SizeOfRawData: " << pSecHeader->SizeOfRawData <<endl;
-        cout << "VirtualAddress: " << pSecHeader->VirtualAddress <<endl;
 
+    sectionHeader = (PIMAGE_SECTION_HEADER)(((DWORD)ntHeaders + sizeof(DWORD) + (DWORD)(sizeof(IMAGE_FILE_HEADER)) + (DWORD)ntHeaders->FileHeader.SizeOfOptionalHeader));
+    DWORD sectionSize = (DWORD)sizeof(IMAGE_SECTION_HEADER);
+    cout << "+ SECTION_HEADER - " << fileHeader->NumberOfSections << endl;
+
+
+    
+
+    for (int i = 0; i < fileHeader->NumberOfSections; i++, sectionHeader++) { // SECTION NAMES
+
+        printf("- \t%s\n", sectionHeader->Name);
+        char name[sizeof(sectionHeader->Name)];
+        memcpy(name, sectionHeader->Name, sizeof(sectionHeader->Name));
+        string namef = (string)name;
+        if (namef == ".idata") {
+            DWORD importDirectionRVA = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+            DWORD  rawOffset = (DWORD)lpBase + sectionHeader->PointerToRawData;
+            PIMAGE_IMPORT_DESCRIPTOR importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(rawOffset + importDirectionRVA - sectionHeader->VirtualAddress);
+            printf("\n******* DLL IMPORTS *******\n");
+
+            for (; importDescriptor->Name != 0; importDescriptor++)  //DLL NAMES
+            {
+                printf("\t%s\n", rawOffset + (importDescriptor->Name - sectionHeader->VirtualAddress));
+                thunk = importDescriptor->OriginalFirstThunk == 0 ? importDescriptor->FirstThunk : importDescriptor->OriginalFirstThunk;
+                thunkData = (PIMAGE_THUNK_DATA)(rawOffset + (thunk - sectionHeader->VirtualAddress));
+
+                for (; thunkData->u1.AddressOfData != 0; thunkData++)  //DLL FUNCİTON NAMES
+                {
+                    if (thunkData->u1.AddressOfData > 0x80000000) {
+                        printf("\t\tOrdinal: %x\n", (WORD)thunkData->u1.AddressOfData);
+                    }
+                    else {
+                        printf("\t\t%s\n", (rawOffset + (thunkData->u1.AddressOfData - sectionHeader->VirtualAddress + 2)));
+                    }
+                }
+
+            }
+        }
     }
 
     CloseHandle(fileHandle);
